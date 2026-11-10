@@ -6,6 +6,7 @@
 *.ko
 *.obj
 *.elf
+chip8-vm
 
 # Linker output
 *.ilk
@@ -53,3 +54,11 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# rom files
+*.ch8
+*.rom
+
+# ide
+.vscode/
+*.swp
