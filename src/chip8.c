@@ -37,3 +37,23 @@ int init_chip8(chip8 *vm) {
     return 0;
 }
 
+int read_rom(const char *filename, chip8 *vm) {
+    FILE *file = fopen(filename, "rb");
+
+    if (file == NULL) {
+        fprintf(stderr, "Error: Could not open ROM file %s\n", filename);
+        return -1;
+    }
+
+    size_t max_size = sizeof(vm->memory) - vm->pc;
+    size_t bytes_read = fread(vm->memory + vm->pc, sizeof(uint8_t), max_size, file);
+
+    if (bytes_read == 0) {
+        fprintf(stderr, "Error: ROM file is empty or could not be read.\n");
+        fclose(file);
+        return -1;
+    }
+    
+    fclose(file);
+    return 0;
+}

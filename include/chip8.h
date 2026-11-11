@@ -16,5 +16,5 @@ typedef struct {
 } chip8;
 
 int init_chip8(chip8 *vm);
-
+int read_rom(const char *filename, chip8 *vm);
 #endif
