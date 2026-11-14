@@ -93,3 +93,13 @@ int decode_execute(chip8 *vm, uint16_t opcode) {
 
     return 0;
 }
+
+void cpu_cycle(chip8 *vm) {
+    uint16_t opcode = fetch(vm);
+    decode_execute(vm, opcode);
+}
+
+void update_timers(chip8 *vm) {
+    if (vm->delay_timer > 0) vm->delay_timer--;
+    if (vm->sound_timer > 0) vm->sound_timer--;
+}

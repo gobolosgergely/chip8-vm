@@ -19,5 +19,7 @@ int init_chip8(chip8 *vm);
 int read_rom(const char *filename, chip8 *vm);
 uint16_t fetch(chip8 *vm);
 int decode_execute(chip8 *vm, uint16_t opcode);
+void cpu_cycle(chip8 *vm);
+void update_timers(chip8 *vm);
 
 #endif
