@@ -1,4 +1,5 @@
 #include "chip8.h"
+#include "instructions.h"
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
@@ -55,5 +56,40 @@ int read_rom(const char *filename, chip8 *vm) {
     }
     
     fclose(file);
+    return 0;
+}
+
+uint16_t fetch(chip8 *vm) {
+    uint16_t opcode = (vm->memory[vm->pc] << 8) | vm->memory[vm->pc + 1];
+    vm->pc += 2;
+    return opcode;
+}
+
+int decode_execute(chip8 *vm, uint16_t opcode) {
+    short nibble1 = opcode >> 12;
+
+    switch (nibble1) {
+        case 0x0:
+            if (opcode == 0x00E0) {
+                op_00E0(vm);
+            }
+            break;
+        case 0x1:
+            op_1NNN(vm, opcode);
+            break;
+        case 0x6:
+            op_6XNN(vm, opcode);
+            break;
+        case 0x7:
+            op_7XNN(vm, opcode);
+            break;
+        case 0xA:
+            op_ANNN(vm, opcode);
+            break;
+        case 0xD:
+            op_DXYN(vm, opcode);
+            break;
+    }
+
     return 0;
 }
