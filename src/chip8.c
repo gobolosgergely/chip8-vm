@@ -66,16 +66,32 @@ uint16_t fetch(chip8 *vm) {
 }
 
 int decode_execute(chip8 *vm, uint16_t opcode) {
-    short nibble1 = opcode >> 12;
-
+    uint8_t nibble1 = opcode >> 12;
+    uint8_t nibble4 = opcode & 0x000F;
+    uint8_t second_byte = opcode;
     switch (nibble1) {
         case 0x0:
             if (opcode == 0x00E0) {
                 op_00E0(vm);
             }
+            else if (opcode == 0x00EE) {
+                op_00EE(vm);
+            }
             break;
         case 0x1:
             op_1NNN(vm, opcode);
+            break;
+        case 0x2:
+            op_2NNN(vm, opcode);
+            break;
+        case 0x3:
+            op_3XNN(vm, opcode);
+            break;
+        case 0x4:
+            op_4XNN(vm, opcode);
+            break;
+        case 0x5:
+            op_5XY0(vm, opcode);
             break;
         case 0x6:
             op_6XNN(vm, opcode);
@@ -83,11 +99,90 @@ int decode_execute(chip8 *vm, uint16_t opcode) {
         case 0x7:
             op_7XNN(vm, opcode);
             break;
+        case 0x8:
+            switch (nibble4) {
+                case 0x0:
+                    op_8XY0(vm, opcode);
+                    break;
+                case 0x1:
+                    op_8XY1(vm, opcode);
+                    break;
+                case 0x2:
+                    op_8XY2(vm, opcode);
+                    break;
+                case 0x3:
+                    op_8XY3(vm, opcode);
+                    break;
+                case 0x4:
+                    op_8XY4(vm, opcode);
+                    break;
+                case 0x5:
+                    op_8XY5(vm, opcode);
+                    break;
+                case 0x6:
+                    op_8XY6(vm, opcode);
+                    break;
+                case 0x7:
+                    op_8XY7(vm, opcode);
+                    break;
+                case 0xE:
+                    op_8XYE(vm, opcode);
+                    break;
+            }
+            break;
+        case 0x9:
+            op_9XY0(vm, opcode);
+            break;
         case 0xA:
             op_ANNN(vm, opcode);
             break;
+        case 0xB:
+            op_BNNN(vm, opcode);
+            break;
+        case 0xC:
+            op_CXNN(vm, opcode);
+            break;
         case 0xD:
             op_DXYN(vm, opcode);
+            break;
+        case 0xE:
+            if (second_byte == 0x9E) {
+                op_EX9E(vm, opcode);
+            }
+            else if (second_byte == 0xA1) {
+                op_EXA1(vm, opcode);
+            }
+            break;
+        case 0xF:
+            switch (second_byte) {
+                case 0x07:
+                    op_FX07(vm, opcode);
+                    break;
+                case 0x0A:
+                    op_FX0A(vm, opcode);
+                    break;
+                case 0x15:
+                    op_FX15(vm, opcode);
+                    break;
+                case 0x18:
+                    op_FX18(vm, opcode);
+                    break;
+                case 0x1E:
+                    op_FX1E(vm, opcode);
+                    break;
+                case 0x29:
+                    op_FX29(vm, opcode);
+                    break;
+                case 0x33:
+                    op_FX33(vm, opcode);
+                    break;
+                case 0x55:
+                    op_FX55(vm, opcode);
+                    break;
+                case 0x65:
+                    op_FX65(vm, opcode);
+                    break;
+            }
             break;
     }
 
@@ -96,7 +191,9 @@ int decode_execute(chip8 *vm, uint16_t opcode) {
 
 void cpu_cycle(chip8 *vm) {
     uint16_t opcode = fetch(vm);
+    printf("PC: 0x%04X | Opcode: 0x%04X\n", vm->pc - 2, opcode);
     decode_execute(vm, opcode);
+    
 }
 
 void update_timers(chip8 *vm) {

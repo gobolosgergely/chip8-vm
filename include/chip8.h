@@ -13,6 +13,9 @@ typedef struct {
     uint8_t sound_timer;
     uint8_t registers[16]; // general-purpose registers (V0 to VF)
     uint8_t keypad[16]; // keypad state
+    uint8_t vblank_ready; /* Set to 1 in each frame, and
+                             set to 0 in DXYN, thus DXYN gets 
+                             executed only once per frame. */
 } chip8;
 
 int init_chip8(chip8 *vm);

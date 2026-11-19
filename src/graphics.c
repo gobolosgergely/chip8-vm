@@ -13,7 +13,7 @@ int graphics_init(uint8_t scale) {
     }
 
     if (!SDL_Init(SDL_INIT_VIDEO)) {
-        printf("Error initializing SDL: %s\n", SDL_GetError());  
+        SDL_Log("Error initializing SDL video: %s\n", SDL_GetError());  
         return -1;
     }
 
