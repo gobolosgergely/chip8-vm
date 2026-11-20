@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_timer.h>
+#include <SDL3/SDL_init.h>
+#include <stdint.h>
 #include "chip8.h"
 #include "graphics.h"
 #include "audio.h"
@@ -46,10 +48,12 @@ static int poll_events(chip8 *vm) {
 
 int main(int argc, char *argv[]) {
     chip8 vm;
+    GraphicsContext gc;
+    AudioContext ac;
     uint16_t clock_rate = 700;
     const uint8_t timer_frequency = 60;
     char rom_path[256] = "roms/ibm-logo-test";
-    
+
     if (argc == 1) ; 
     else if (argc == 2) {
         snprintf(rom_path, 256, "roms/%s", argv[1]);
@@ -66,16 +70,22 @@ int main(int argc, char *argv[]) {
         printf("Use: %s [ROM] [optional: clock rate]\n", argv[0]);
         return EXIT_FAILURE;
     }
-    const uint64_t CPU_TICK_NS = 1000000000 / clock_rate;  // 1.000.000.000
-    const uint64_t TIMER_TICK_NS = 1000000000 / timer_frequency; // 1.000.000.000
-    uint64_t last_cpu_time = SDL_GetTicksNS();
-    uint64_t last_timer_time = last_cpu_time;
-    uint64_t current_time;
 
     if (init_chip8(&vm) != 0) return EXIT_FAILURE;
     if (read_rom(rom_path, &vm) != 0) return EXIT_FAILURE; 
-    if (graphics_init(30) != 0) return EXIT_FAILURE;
-    if (audio_init() != 0) return EXIT_FAILURE;
+    if (graphics_init(&gc, 20, 64, 32) != 0) return EXIT_FAILURE;
+    if (audio_init(&ac) != 0) {
+        graphics_clean(&gc);
+        SDL_Quit();
+        return EXIT_FAILURE;
+    } 
+
+    const uint64_t CPU_TICK_NS = 1000000000 / clock_rate;  // 1.000.000.000
+    const uint64_t TIMER_TICK_NS = 1000000000 / timer_frequency; // 1.000.000.000
+    uint64_t current_time;
+    uint64_t last_cpu_time = SDL_GetTicksNS();
+    uint64_t last_timer_time = last_cpu_time;
+
     while (1) {
         if (poll_events(&vm) != 0) break;
 
@@ -90,15 +100,17 @@ int main(int argc, char *argv[]) {
             vm.vblank_ready = 1;
             update_timers(&vm);
             
-            if (vm.sound_timer > 0) play_audio(timer_frequency);       
+            if (vm.sound_timer > 0) audio_play(&ac, 1000/timer_frequency);       
+            else audio_stop(&ac);
 
-            draw_display(&vm);
+            graphics_draw(&gc, vm.display);
         }
     }
 
 
-    graphics_clean();
-    audio_clean();
+    graphics_clean(&gc);
+    audio_clean(&ac);
+    SDL_Quit();
     printf("CHIP-8 VM executed successfully.\n");
     return EXIT_SUCCESS;
 }

@@ -1,6 +1,7 @@
+#ifndef CHIP8_H
+#define CHIP8_H
+
 #include <stdint.h>
-#ifndef _CHIP8_H
-#define _CHIP8_H
 
 typedef struct { 
     uint8_t memory[4096]; // 0x000 to 0xFFF
