@@ -50,8 +50,8 @@ int main(int argc, char *argv[]) {
     chip8 vm;
     GraphicsContext gc;
     AudioContext ac;
-    uint16_t clock_rate = 700;
-    const uint8_t timer_frequency = 60;
+    uint32_t clock_rate = 700;
+    uint8_t timer_frequency = 60;
     char rom_path[256] = "roms/ibm-logo-test";
 
     if (argc == 1) ; 
@@ -61,9 +61,9 @@ int main(int argc, char *argv[]) {
     else if (argc == 3) {
         snprintf(rom_path, 256, "roms/%s", argv[1]);
 
-        clock_rate = atoi(argv[2]);
         // If atoi cannot convert the input, it returns 0.
-        if (clock_rate == 0) clock_rate = 700;         
+        if (atoi(argv[2]) <= 0) clock_rate = 700;
+        else clock_rate = atoi(argv[2]);
     }
     else {
         printf("Invalid argument!\n");
@@ -80,30 +80,36 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     } 
 
-    const uint64_t CPU_TICK_NS = 1000000000 / clock_rate;  // 1.000.000.000
-    const uint64_t TIMER_TICK_NS = 1000000000 / timer_frequency; // 1.000.000.000
+    uint32_t cpu_cycle_per_frame = (clock_rate + (timer_frequency / 2)) / timer_frequency;
+    const uint64_t timer_tick_ns = SDL_NS_PER_SECOND / timer_frequency;
     uint64_t current_time;
-    uint64_t last_cpu_time = SDL_GetTicksNS();
-    uint64_t last_timer_time = last_cpu_time;
+    uint64_t next_frame_time = SDL_GetTicksNS();
 
+    if (cpu_cycle_per_frame == 0) {
+        cpu_cycle_per_frame = 1;
+    }
     while (1) {
         if (poll_events(&vm) != 0) break;
 
-        current_time = SDL_GetTicksNS();
-        if (current_time - last_cpu_time >= CPU_TICK_NS) {
-            last_cpu_time = current_time;
+        vm.vblank_ready = 1;
+        for (uint32_t i = 0; i < cpu_cycle_per_frame; i++) {
             cpu_cycle(&vm);
         }
 
-        if (current_time - last_timer_time >= TIMER_TICK_NS) {
-            last_timer_time = current_time;
-            vm.vblank_ready = 1;
-            update_timers(&vm);
-            
-            if (vm.sound_timer > 0) audio_play(&ac, 1000/timer_frequency);       
-            else audio_stop(&ac);
+        update_timers(&vm);
+        
+        if (vm.sound_timer > 0) audio_play(&ac, 1000/timer_frequency);       
+        else audio_stop(&ac);
 
-            graphics_draw(&gc, vm.display);
+        graphics_draw(&gc, vm.display);
+
+        next_frame_time += timer_tick_ns;
+        current_time = SDL_GetTicksNS();
+        if (current_time < next_frame_time) {
+            SDL_DelayPrecise(next_frame_time - current_time);
+        }
+        else {
+            next_frame_time = current_time;
         }
     }
 
