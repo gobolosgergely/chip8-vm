@@ -7,6 +7,7 @@
 #include "chip8.h"
 #include "graphics.h"
 #include "audio.h"
+#include "config.h"
 
 static const SDL_Scancode keymap[16] = {
     SDL_SCANCODE_X,
@@ -50,29 +51,14 @@ int main(int argc, char *argv[]) {
     chip8 vm;
     GraphicsContext gc;
     AudioContext ac;
-    uint32_t clock_rate = 700;
-    uint8_t timer_frequency = 60;
-    char rom_path[256] = "roms/ibm-logo-test";
+    Config cfg;
 
-    if (argc == 1) ; 
-    else if (argc == 2) {
-        snprintf(rom_path, 256, "roms/%s", argv[1]);
+    ParseStatus status = parse_args(argc, argv, &cfg);
+    if (status != PARSE_OK) {
+        return (status == PARSE_HELP) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
-    else if (argc == 3) {
-        snprintf(rom_path, 256, "roms/%s", argv[1]);
-
-        // If atoi cannot convert the input, it returns 0.
-        if (atoi(argv[2]) <= 0) clock_rate = 700;
-        else clock_rate = atoi(argv[2]);
-    }
-    else {
-        printf("Invalid argument!\n");
-        printf("Use: %s [ROM] [optional: clock rate]\n", argv[0]);
-        return EXIT_FAILURE;
-    }
-
     if (init_chip8(&vm) != 0) return EXIT_FAILURE;
-    if (read_rom(rom_path, &vm) != 0) return EXIT_FAILURE; 
+    if (read_rom(cfg.rom_path, &vm) != 0) return EXIT_FAILURE; 
     if (graphics_init(&gc, 20, 64, 32) != 0) return EXIT_FAILURE;
     if (audio_init(&ac) != 0) {
         graphics_clean(&gc);
@@ -80,8 +66,8 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     } 
 
-    uint32_t cpu_cycle_per_frame = (clock_rate + (timer_frequency / 2)) / timer_frequency;
-    const uint64_t timer_tick_ns = SDL_NS_PER_SECOND / timer_frequency;
+    uint32_t cpu_cycle_per_frame = (cfg.clock_rate + (cfg.frame_rate / 2)) / cfg.frame_rate;
+    const uint64_t timer_tick_ns = SDL_NS_PER_SECOND / cfg.frame_rate;
     uint64_t current_time;
     uint64_t next_frame_time = SDL_GetTicksNS();
 
@@ -98,7 +84,7 @@ int main(int argc, char *argv[]) {
 
         update_timers(&vm);
         
-        if (vm.sound_timer > 0) audio_play(&ac, 1000/timer_frequency);       
+        if (vm.sound_timer > 0) audio_play(&ac, 1000/cfg.frame_rate);       
         else audio_stop(&ac);
 
         graphics_draw(&gc, vm.display);
